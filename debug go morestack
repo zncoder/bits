@@ -1,0 +1,17 @@
+runtime.morestack is called on the system stack. To find out the actual caller that triggers morestack, add this to runtime.newstack,
+
+	systemstack(func() {
+		g0 := getg()
+		g0.m.traceback = 1
+		b := stringtoslicebytetmp(stacktrace)
+		g0.writebuf = b[:0]
+		goroutineheader(gp)
+		traceback(^uintptr(0), ^uintptr(0), 0, gp)
+		g0.m.traceback = 0
+		n := len(g0.writebuf)
+		g0.writebuf = nil
+		print("runtime: newstack grow gp=", gp.goid, " from=", oldsize, " to=", newsize, "\n")
+		print("  stack:", stacktrace[:n])
+	})
+
+and rebuild the program with, go build -a
